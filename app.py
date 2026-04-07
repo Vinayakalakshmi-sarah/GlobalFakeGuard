@@ -21,7 +21,6 @@ def load_model():
         "zero-shot-classification",
         model="facebook/bart-large-mnli"
     )
-    )
     explainer = pipeline("text-generation", model="google/flan-t5-base")
     return classifier, explainer
 
