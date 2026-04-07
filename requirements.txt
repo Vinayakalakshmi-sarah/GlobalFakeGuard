@@ -1,3 +1,8 @@
 streamlit
 transformers
 torch
+plotly
+speechrecognition
+langdetect
+beautifulsoup4
+requests
