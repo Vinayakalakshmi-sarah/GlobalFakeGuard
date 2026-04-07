@@ -1,10 +1,11 @@
 import streamlit as st
 from transformers import pipeline
-from newspaper import Article
 import time
 import plotly.express as px
 import speech_recognition as sr
 from langdetect import detect
+import requests
+from bs4 import BeautifulSoup
 
 # -----------------------
 # CONFIG
@@ -12,12 +13,11 @@ from langdetect import detect
 st.set_page_config(page_title="GlobalFakeGuard", layout="wide")
 
 # -----------------------
-# MODELS
+# MODELS (FIXED)
 # -----------------------
 @st.cache_resource
-@st.cache_resource
-def load_model():
-    return pipeline(
+def load_models():
+    classifier = pipeline(
         "zero-shot-classification",
         model="facebook/bart-large-mnli"
     )
@@ -90,13 +90,24 @@ def get_voice_input():
         return "VOICE ERROR"
 
 # -----------------------
-# EXPLAIN (FIXED WITH FALLBACK FOR SHORT TEXT)
+# URL TEXT EXTRACTOR (REPLACED)
+# -----------------------
+def extract_text_from_url(url):
+    try:
+        response = requests.get(url)
+        soup = BeautifulSoup(response.text, "html.parser")
+        paragraphs = soup.find_all("p")
+        return " ".join([p.get_text() for p in paragraphs])
+    except:
+        return ""
+
+# -----------------------
+# EXPLAIN
 # -----------------------
 def explain(text, label):
     try:
-        # If text is too short, just return fallback
         if len(text.strip()) < 20:
-            raise ValueError("Text too short for AI explanation")
+            raise ValueError("Short text")
 
         res = explainer(
             f"Explain why this is {label}: {text[:300]}",
@@ -105,7 +116,6 @@ def explain(text, label):
         )
         return res[0]["generated_text"]
     except:
-        # FALLBACK (ALWAYS SHOW)
         if "FAKE" in label:
             return """This news appears fake because:
 - It may contain exaggerated or emotional words
@@ -131,13 +141,10 @@ user_input = ""
 if option == "URL":
     url = st.sidebar.text_input("ENTER URL")
     if url:
-        try:
-            article = Article(url)
-            article.download()
-            article.parse()
-            user_input = article.text
+        user_input = extract_text_from_url(url)
+        if user_input:
             st.sidebar.success("LOADED")
-        except:
+        else:
             st.sidebar.error("ERROR")
 
 elif option == "VOICE":
@@ -206,12 +213,10 @@ elif st.session_state.page == "analyzer":
             except:
                 st.info("UNKNOWN LANGUAGE")
 
-            # RULE
             rule_label = None
             if any(word in text.lower() for word in fake_keywords):
                 rule_label = "FAKE NEWS (PATTERN DETECTED)"
 
-            # MODEL
             labels = ["This is real news", "This is fake news"]
             result = classifier(text, candidate_labels=labels)
 
