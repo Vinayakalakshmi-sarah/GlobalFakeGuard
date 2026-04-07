@@ -15,10 +15,12 @@ st.set_page_config(page_title="GlobalFakeGuard", layout="wide")
 # MODELS
 # -----------------------
 @st.cache_resource
-def load_models():
-    classifier = pipeline(
+@st.cache_resource
+def load_model():
+    return pipeline(
         "zero-shot-classification",
-        model="MoritzLaurer/mDeBERTa-v3-base-mnli-xnli"
+        model="facebook/bart-large-mnli"
+    )
     )
     explainer = pipeline("text-generation", model="google/flan-t5-base")
     return classifier, explainer
