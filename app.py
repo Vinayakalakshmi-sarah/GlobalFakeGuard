@@ -19,11 +19,13 @@ st.set_page_config(page_title="GlobalFakeGuard", layout="wide")
 def load_models():
     classifier = pipeline(
         "zero-shot-classification",
-        model="facebook/bart-large-mnli"
+        model="valhalla/distilbart-mnli-12-1"   # lightweight
     )
-    explainer = pipeline("text-generation", model="google/flan-t5-base")
+    explainer = pipeline(
+        "text-generation",
+        model="google/flan-t5-small"   # lightweight
+    )
     return classifier, explainer
-
 classifier, explainer = load_models()
 
 # -----------------------
